@@ -1,0 +1,25 @@
+[modules]
+left = ["Workspaces"]
+center = ["Tempo"]
+right = ["Tray", "Settings"]
+
+[tempo]
+timezones = [
+  "Europe/Copenhagen",
+  "Australia/Sydney"
+]
+clock_format = "%H:%M:%S"
+weather_location = { City = "Copenhagen" }
+wind_speed_unit = "Kmh"
+
+[workspaces]
+visibility_mode = "MonitorSpecific"
+
+[appearance]
+primary_color = "#ffa500"
+style = "Solid"
+
+[appearance.background_color]
+base = "#292929"
+
+

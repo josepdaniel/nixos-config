@@ -38,6 +38,7 @@
   xdg.configFile."tmux" = { source = ./tmux; recursive = true; };
   xdg.configFile."niri" = { source = ./niri; recursive = true; };
   xdg.configFile."fish" = { source = ./fish; recursive = true; };
+  xdg.configFile."ashell" = { source = ./ashell; recursive = true; };
 
   programs.alacritty.enable = true;
   programs.fuzzel.enable = true;
