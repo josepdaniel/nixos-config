@@ -30,5 +30,19 @@
   services.printing.enable = true;
   services.power-profiles-daemon.enable = true;
 
-  fonts.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
+  fonts = {
+    packages = [
+      pkgs.nerd-fonts.jetbrains-mono
+      pkgs.inter
+      pkgs.noto-fonts
+      pkgs.noto-fonts-cjk-sans
+      pkgs.noto-fonts-color-emoji
+    ];
+    fontconfig.defaultFonts = {
+      sansSerif = [ "Inter" "Noto Sans" ];
+      serif = [ "Noto Serif" ];
+      monospace = [ "JetBrainsMono Nerd Font" ];
+      emoji = [ "Noto Color Emoji" ];
+    };
+  };
 }
