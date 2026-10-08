@@ -3,6 +3,7 @@
 
   networking.hostName = "deep-thought";
   networking.networkmanager.enable = true;
+  services.openssh.enable = true;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
