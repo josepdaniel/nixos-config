@@ -25,5 +25,10 @@
     pulse.enable = true;
   };
 
+  hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
+  services.printing.enable = true;
+  services.power-profiles-daemon.enable = true;
+
   fonts.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
 }
