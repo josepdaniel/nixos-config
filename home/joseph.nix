@@ -35,15 +35,13 @@
       };
   };
   
-  programs.tmux = {
-    enable = true;
-    extraConfig = builtins.readFile ./tmux.conf;
-  };
+  xdg.configFile."tmux" = { source = ./tmux; recursive = true; };
+  xdg.configFile."niri" = { source = ./niri; recursive = true; };
+  xdg.configFile."fish" = { source = ./fish; recursive = true; };
 
-  xdg.configFile."niri/config.kdl".source = ./niri.kdl;
   programs.alacritty.enable = true;
   programs.fuzzel.enable = true;
   programs.swaylock.enable = true;
   
-  home.packages = [ pkgs.ashell pkgs.playerctl pkgs.brightnessctl pkgs.bitwarden-desktop pkgs.wl-clipboard pkgs.delta ];
+  home.packages = [ pkgs.ashell pkgs.playerctl pkgs.brightnessctl pkgs.bitwarden-desktop pkgs.wl-clipboard pkgs.delta pkgs.tmux ];
 }
