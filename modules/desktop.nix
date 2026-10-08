@@ -1,5 +1,6 @@
 { pkgs, ... }: {
   programs.niri.enable = true;
+  security.pam.services.swaylock = { };
 
   services.greetd = {
     enable = true;

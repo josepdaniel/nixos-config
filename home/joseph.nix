@@ -17,6 +17,21 @@
     extraPackages = [ pkgs.nil ];
   };
 
+  programs.chromium = {
+    enable = true;
+    extensions = [
+      { id = "nngceckbapebfimnlniiiahkandclblb"; }  # bitwarden
+      {
+        id = "cekpbngipfahnpmhegjojbpchoidhjml";    # adnauseam, not on the web store
+        version = "3.29.2";
+        crxPath = pkgs.fetchurl {
+          url = "https://github.com/dhowe/AdNauseam/releases/download/v3.29.2/adnauseam-3.29.2.chromium.crx";
+          hash = "sha256-im+fPXCVntH2T7Jc8KF8qHgL03qSFqT4kHCObknr7Hk=";
+        };
+      }
+    ];
+  };
+
   programs.firefox = {
       enable = true;
       policies = {
@@ -39,10 +54,11 @@
   xdg.configFile."niri" = { source = ./niri; recursive = true; };
   xdg.configFile."fish" = { source = ./fish; recursive = true; };
   xdg.configFile."ashell" = { source = ./ashell; recursive = true; };
+  xdg.configFile."swaylock" = { source = ./swaylock; recursive = true; };
 
   programs.alacritty.enable = true;
   programs.fuzzel.enable = true;
-  programs.swaylock.enable = true;
+
   
-  home.packages = [ pkgs.ashell pkgs.playerctl pkgs.brightnessctl pkgs.bitwarden-desktop pkgs.wl-clipboard pkgs.delta pkgs.tmux ];
+  home.packages = [ pkgs.ashell pkgs.playerctl pkgs.brightnessctl pkgs.bitwarden-desktop pkgs.wl-clipboard pkgs.delta pkgs.tmux pkgs.swaylock ];
 }

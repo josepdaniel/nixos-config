@@ -1,0 +1,15 @@
+ignore-empty-password
+show-failed-attempts
+indicator-radius=120
+indicator-thickness=10
+color=292929
+ring-color=ffa500
+ring-ver-color=ffa500
+ring-wrong-color=ff7400
+inside-color=29292900
+inside-ver-color=29292900
+inside-wrong-color=29292900
+key-hl-color=ffa500
+text-color=ffffff
+line-color=00000000
+separator-color=00000000
