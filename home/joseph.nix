@@ -2,6 +2,21 @@
   home.username = "joseph";
   home.homeDirectory = "/home/joseph";
   home.stateVersion = "26.05";
+
+  services.mako.enable = true;
+  systemd.user.services.mako = {
+    Unit = {
+      Description = "mako";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.mako}/bin/mako";
+      Restart = "on-failure";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+  
   programs.home-manager.enable = true;
   programs.git = {
     enable = true;
@@ -49,6 +64,10 @@
         };
       };
   };
+
+  
+  programs.alacritty.enable = true;
+  programs.fuzzel.enable = true;
   
   xdg.configFile."tmux" = { source = ./tmux; recursive = true; };
   xdg.configFile."niri" = { source = ./niri; recursive = true; };
@@ -56,9 +75,17 @@
   xdg.configFile."ashell" = { source = ./ashell; recursive = true; };
   xdg.configFile."swaylock" = { source = ./swaylock; recursive = true; };
 
-  programs.alacritty.enable = true;
-  programs.fuzzel.enable = true;
-
   
-  home.packages = [ pkgs.ashell pkgs.playerctl pkgs.brightnessctl pkgs.bitwarden-desktop pkgs.wl-clipboard pkgs.delta pkgs.tmux pkgs.swaylock ];
+  home.packages = [
+    pkgs.ashell
+    pkgs.playerctl
+    pkgs.brightnessctl
+    pkgs.bitwarden-desktop
+    pkgs.wl-clipboard
+    pkgs.delta
+    pkgs.tmux
+    pkgs.swaylock
+    pkgs.xwayland-satellite
+    pkgs.libnotify
+  ];
 }
