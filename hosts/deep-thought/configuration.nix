@@ -1,5 +1,9 @@
 { ... }: {
-  imports = [ ./hardware-configuration.nix ../../modules/common.nix ];
+  imports = [
+    ./hardware-configuration.nix
+    ../../modules/common.nix
+    ../../modules/desktop.nix
+  ];
 
   networking.hostName = "deep-thought";
   networking.networkmanager.enable = true;
