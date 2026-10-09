@@ -81,7 +81,6 @@
     pkgs.ashell
     pkgs.playerctl
     pkgs.brightnessctl
-    pkgs.bitwarden-desktop
     pkgs.wl-clipboard
     pkgs.delta
     pkgs.tmux

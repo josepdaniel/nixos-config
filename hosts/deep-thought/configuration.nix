@@ -12,7 +12,12 @@
 
   networking.hostName = "deep-thought";
   networking.networkmanager.enable = true;
+
   services.openssh.enable = true;
+
+  virtualisation.docker.enable = true;
+  users.users.joseph.extraGroups = [ "docker" ];
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
