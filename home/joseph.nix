@@ -64,6 +64,7 @@
   xdg.configFile."ashell" = { source = ./ashell; recursive = true; };
   xdg.configFile."swaylock" = { source = ./swaylock; recursive = true; };
   xdg.configFile."nixpkgs" = { source = ./nixpkgs; recursive = true; };
+  xdg.configFile."helix" = { source = ./helix; recursive = true; };
 
   
   home.packages = [

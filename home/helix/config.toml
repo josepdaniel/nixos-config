@@ -1,0 +1,10 @@
+theme = "kaolin-valley-dark"
+
+[keys.normal]
+R = ":reset-diff-change"
+
+[editor.statusline]
+right = ["diagnostics", "version-control"]
+
+[editor.lsp]
+display-messages = true
