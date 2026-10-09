@@ -4,18 +4,6 @@
   home.stateVersion = "26.05";
 
   services.mako.enable = true;
-  systemd.user.services.mako = {
-    Unit = {
-      Description = "mako";
-      PartOf = [ "graphical-session.target" ];
-      After = [ "graphical-session.target" ];
-    };
-    Service = {
-      ExecStart = "${pkgs.mako}/bin/mako";
-      Restart = "on-failure";
-    };
-    Install.WantedBy = [ "graphical-session.target" ];
-  };
   
   programs.home-manager.enable = true;
   programs.git = {
@@ -72,6 +60,7 @@
   xdg.configFile."tmux" = { source = ./tmux; recursive = true; };
   xdg.configFile."niri" = { source = ./niri; recursive = true; };
   xdg.configFile."fish" = { source = ./fish; recursive = true; };
+  xdg.configFile."mako" = { source = ./mako; recursive = true; };
   xdg.configFile."ashell" = { source = ./ashell; recursive = true; };
   xdg.configFile."swaylock" = { source = ./swaylock; recursive = true; };
   xdg.configFile."nixpkgs" = { source = ./nixpkgs; recursive = true; };
@@ -84,7 +73,7 @@
     pkgs.wl-clipboard
     pkgs.delta
     pkgs.tmux
-    pkgs.swaylock
+    pkgs.swaylock-effects
     pkgs.xwayland-satellite
     pkgs.libnotify
   ];
