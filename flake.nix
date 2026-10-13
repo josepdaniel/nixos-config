@@ -9,11 +9,12 @@
     };
   };
 
-  outputs = { nixpkgs, ... }@inputs: {
-    nixosConfigurations.deep-thought = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
-      modules = [ ./hosts/deep-thought/configuration.nix ];
+  outputs =
+    { nixpkgs, ... }@inputs:
+    {
+      nixosConfigurations.deep-thought = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [ ./hosts/deep-thought/configuration.nix ];
+      };
     };
-  };
 }
