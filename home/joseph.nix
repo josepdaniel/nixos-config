@@ -27,5 +27,10 @@
 
   home.packages = [
     pkgs.delta
+    pkgs.jq
+    pkgs.yq
+    pkgs.gron
+    pkgs.uv
+    pkgs.bun
   ];
 }

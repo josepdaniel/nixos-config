@@ -32,7 +32,7 @@ in
     package = steelix;
     extraPackages = [ pkgs.nil ];
     settings = {
-      theme = "kaolin-valley-dark";
+      theme = "monokai_pro";
       keys.normal = {
         R = ":reset-diff-change";
       };

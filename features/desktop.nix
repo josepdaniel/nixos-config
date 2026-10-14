@@ -1,6 +1,47 @@
 { pkgs, ... }:
 let
   user = "joseph";
+
+  cliphistPicker = pkgs.writeShellApplication {
+    name = "cliphist-picker";
+    runtimeInputs = [
+      pkgs.cliphist
+      pkgs.fuzzel
+      pkgs.wl-clipboard
+      pkgs.wtype
+      pkgs.gawk
+    ];
+    text = ''
+      tmpdir=$(mktemp -d)
+      trap 'rm -rf "$tmpdir"' EXIT
+
+      build_menu() {
+        while IFS= read -r line; do
+          preview=''${line#*$'\t'}
+          if [[ "$preview" == "[[ binary data"*"]]" ]]; then
+            id=''${line%%$'\t'*}
+            ext=$(awk '{print $5}' <<<"$preview")
+            case "$ext" in
+              png|jpg|jpeg|gif|bmp|webp) ;;
+              *) ext=png ;;
+            esac
+            img="$tmpdir/$id.$ext"
+            if cliphist decode <<<"$line" >"$img" 2>/dev/null && [[ -s "$img" ]]; then
+              printf '%s\0icon\x1f%s\n' "$line" "$img"
+              continue
+            fi
+          fi
+          printf '%s\n' "$line"
+        done
+      }
+
+      selection=$(cliphist list | build_menu | fuzzel --dmenu)
+      [[ -z "$selection" ]] && exit 0
+
+      cliphist decode <<<"$selection" | wl-copy
+      wtype -M ctrl v -m ctrl
+    '';
+  };
 in
 {
   # ---------------------------------------------------------------------------
@@ -79,15 +120,60 @@ in
       recursive = true;
     };
 
-    programs.alacritty.enable = true;
-    programs.fuzzel.enable = true;
+    gtk = {
+      enable = true;
+      theme = {
+        name = "Adwaita-dark";
+        package = pkgs.gnome-themes-extra;
+      };
+      iconTheme = {
+        name = "Papirus-Dark";
+        package = pkgs.papirus-icon-theme;
+      };
+    };
+
+    qt = {
+      enable = true;
+      platformTheme = "gnome";
+      style.name = "adwaita-dark";
+    };
+
+    programs.ghostty = {
+      enable = true;
+      settings = {
+        theme = "Monokai Pro";
+      };
+    };
+    programs.fuzzel = {
+      enable = true;
+      settings.main = {
+        width = 60;
+        horizontal-pad = 12;
+        icon-theme = "Papirus-Dark";
+      };
+    };
+
+    services.cliphist.enable = true;
+
+    xdg.desktopEntries.qalculate = {
+      name = "Calculator";
+      genericName = "Calculator";
+      comment = "Command-line calculator in a floating terminal";
+      exec = "ghostty --class=org.nixos.Qalculate -e qalc";
+      icon = "accessories-calculator";
+      terminal = false;
+      categories = [
+        "Utility"
+        "Calculator"
+      ];
+    };
 
     programs.swaylock = {
       enable = true;
       package = pkgs.swaylock-effects;
       settings = {
         ignore-empty-password = true;
-
+        font = "Inter";
         clock = true;
         timestr = "%R";
         datestr = "%a, %e of %B";
@@ -156,9 +242,13 @@ in
       pkgs.playerctl
       pkgs.brightnessctl
       pkgs.wl-clipboard
+      pkgs.wtype
+      cliphistPicker
       pkgs.swaylock-effects
       pkgs.xwayland-satellite
       pkgs.libnotify
+      pkgs.nemo
+      pkgs.libqalculate
     ];
   };
 }

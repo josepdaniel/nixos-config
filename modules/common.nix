@@ -21,6 +21,7 @@
     shell = pkgs.fish;
   };
   programs.fish.enable = true;
+  programs.nix-ld.enable = true;
 
   environment.systemPackages = with pkgs; [
     git
