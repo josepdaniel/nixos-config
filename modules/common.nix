@@ -12,6 +12,10 @@
   nix.optimise.automatic = true;
   time.timeZone = "Europe/Copenhagen";
 
+  security.sudo.extraConfig = ''
+    Defaults pwfeedback
+  '';
+
   users.users.joseph = {
     isNormalUser = true;
     extraGroups = [

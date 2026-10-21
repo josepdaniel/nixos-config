@@ -15,7 +15,7 @@
       set -s copy-command 'wl-copy'
 
       # make colours work
-      set -as terminal-features ",alacritty:RGB"
+      set -as terminal-features ",xterm-ghostty:RGB"
 
       # hjkl
       bind-key l select-pane -R

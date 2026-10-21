@@ -237,7 +237,6 @@ in
     };
 
     home.packages = [
-      pkgs.alacritty
       pkgs.fuzzel
       pkgs.playerctl
       pkgs.brightnessctl
