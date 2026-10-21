@@ -3,7 +3,7 @@ spawn-at-startup "ashell"
 input {
     keyboard {
         xkb {
-            options "ctrl:nocaps"
+            options "ctrl:nocaps,altwin:swap_alt_win"
         }
     }
 
@@ -17,6 +17,11 @@ input {
         natural-scroll
     }
 
+}
+
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
 }
 
 output "DP-3" {
@@ -38,6 +43,8 @@ gestures {
         off
     }
 }
+
+prefer-no-csd
 
 layout {
     gaps 10
@@ -92,7 +99,7 @@ window-rule {
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
+    Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Mod+V hotkey-overlay-title="Clipboard History: cliphist" { spawn "cliphist-picker"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }

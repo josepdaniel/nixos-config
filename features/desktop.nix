@@ -90,6 +90,17 @@ in
 
   services.power-profiles-daemon.enable = true;
 
+  # ashell reads battery state only over the org.freedesktop.UPower D-Bus
+  # interface; power-profiles-daemon shares that namespace but exposes no
+  # battery devices.
+  services.upower.enable = true;
+
+  # Nemo's sidebar is populated by the gvfs udisks2 volume monitor, not by
+  # Nemo itself; udisks2 does the actual mounting, gvfs exposes it to the
+  # session. Both are needed for removable drives to appear at all.
+  services.udisks2.enable = true;
+  services.gvfs.enable = true;
+
   fonts = {
     packages = [
       pkgs.nerd-fonts.jetbrains-mono
@@ -120,6 +131,14 @@ in
       recursive = true;
     };
 
+    home.pointerCursor = {
+      enable = true;
+      gtk.enable = true;
+      name = "Adwaita";
+      package = pkgs.adwaita-icon-theme;
+      size = 24;
+    };
+
     gtk = {
       enable = true;
       theme = {
@@ -132,16 +151,28 @@ in
       };
     };
 
+    # GTK apps pick up the theme above from gtk-3.0/settings.ini, but Electron
+    # and libadwaita apps instead ask the portal for the org.freedesktop.appearance
+    # color-scheme preference, which mirrors this dconf key. gtk.theme does not
+    # set it, so without this the portal answers "no preference" and they render
+    # light no matter what Adwaita-dark is doing.
+    dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
+
     qt = {
       enable = true;
       platformTheme = "gnome";
       style.name = "adwaita-dark";
     };
 
-    programs.ghostty = {
+    programs.alacritty = {
       enable = true;
-      settings = {
-        theme = "Monokai Pro";
+      theme = "monokai_pro";
+      settings.window = {
+        padding = {
+          x = 8;
+          y = 6;
+        };
+        dynamic_padding = true;
       };
     };
     programs.fuzzel = {
@@ -159,7 +190,7 @@ in
       name = "Calculator";
       genericName = "Calculator";
       comment = "Command-line calculator in a floating terminal";
-      exec = "ghostty --class=org.nixos.Qalculate -e qalc";
+      exec = "alacritty --class org.nixos.Qalculate -e qalc";
       icon = "accessories-calculator";
       terminal = false;
       categories = [
