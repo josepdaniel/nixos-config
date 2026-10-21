@@ -78,6 +78,13 @@ in
     pulse.enable = true;
   };
 
+  # swayosd draws the volume/brightness OSD. Volume it reads straight from
+  # PulseAudio, but brightness means writing /sys/class/backlight/*/brightness,
+  # which is root-only until the package's udev rules hand it to the "video"
+  # group, so the rules and the group membership are both needed.
+  services.udev.packages = [ pkgs.swayosd ];
+  users.users.${user}.extraGroups = [ "video" ];
+
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
 
@@ -227,6 +234,7 @@ in
       settings = {
         appearance = {
           style = "Solid";
+          scale_factor = 1.2;
         };
         modules = {
           left = [ "Workspaces" ];
@@ -252,6 +260,11 @@ in
           visibility_mode = "MonitorSpecific";
         };
       };
+    };
+
+    services.swayosd = {
+      enable = true;
+      topMargin = 0.8;
     };
 
     services.mako = {
