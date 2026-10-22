@@ -26,15 +26,16 @@ let
   };
 in
 {
-  programs.helix = {
+  # nhx replaces programs.helix: same config.toml/languages.toml, plus Steel
+  # plugins installed into STEEL_HOME and a generated init.scm.
+  programs.nhx = {
     enable = true;
-    defaultEditor = true;
     package = steelix;
-    extraPackages = [ pkgs.nil ];
     settings = {
       theme = "monokai_pro";
       keys.normal = {
         R = ":reset-diff-change";
+        # f = ":forest-open";
       };
     };
     languages.language = [
@@ -48,5 +49,13 @@ in
         };
       }
     ];
+    steel.enable = true;
+    plugins.forest = {
+      enable = true;
+      config.position = "left";
+    };
   };
+
+  home.sessionVariables.EDITOR = "hx";
+  home.packages = [ pkgs.nil ];
 }

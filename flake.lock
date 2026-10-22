@@ -21,6 +21,26 @@
         "type": "github"
       }
     },
+    "nhx": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791482612,
+        "narHash": "sha256-GsVldusEB+3M5U7pRCYCmjm1zXu4UVcKVDRMIruUm7A=",
+        "owner": "RAVENz46",
+        "repo": "nhx",
+        "rev": "a4d52d332fefcf3e577e30a03cb1e7bbdadb77ac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RAVENz46",
+        "repo": "nhx",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1792615934,
@@ -40,6 +60,7 @@
     "root": {
       "inputs": {
         "home-manager": "home-manager",
+        "nhx": "nhx",
         "nixpkgs": "nixpkgs"
       }
     }
