@@ -38,7 +38,7 @@ const STATE_FILE = path.join(RUNTIME_DIR, `${KEY}.json`);
 
 type Kind = "question" | "change";
 type Status = "open" | "answered" | "applied" | "declined" | "resolved";
-interface Message { role: "you" | "claude"; text: string; at: number }
+interface Message { role: "you" | "claude"; text: string; at: number; from?: string }
 interface Thread {
   id: string;
   kind: Kind;
@@ -103,28 +103,36 @@ function severity(t: Thread): number {
   }
 }
 
-function glyph(t: Thread) {
-  if (t.status === "open") return t.kind === "change" ? "!" : "?";
-  if (t.status === "answered") return "✓";
-  if (t.status === "applied") return "✓ applied";
-  if (t.status === "declined") return "✗ declined";
-  return "·";
+// Inline marker: short on purpose. The full thread is one hover away.
+function marker(t: Thread) {
+  const last = t.messages[t.messages.length - 1];
+  const by = last?.role === "claude" && last.from ? ` by ${last.from}` : "";
+  switch (t.status) {
+    case "open": return t.kind === "change" ? `! ${t.id} · change pending` : `? ${t.id} · pending`;
+    case "answered": return `✓ ${t.id} · replied${by}`;
+    case "applied": return `✓ ${t.id} · applied${by}`;
+    case "declined": return `✗ ${t.id} · declined${by}`;
+    default: return `· ${t.id}`;
+  }
 }
 
 function firstLine(s: string): string { return s.split("\n")[0] ?? ""; }
 function headText(t: Thread) { return firstLine(t.messages[0]?.text ?? ""); }
 
+// Helix underlines every diagnostic by severity and offers no per-server
+// styling, so by default the diagnostic is published as a zero-width range
+// at the thread start: gutter mark and inline text stay, the squiggle goes.
+// Hover, code actions and the picker use the thread range, not this one.
+// Pass --underline to publish the full range instead.
 function diagnosticFor(t: Thread): Diagnostic {
-  const last = t.messages[t.messages.length - 1];
-  let msg = `${glyph(t)} ${headText(t)}`;
-  if (last && last.role === "claude") msg += `\n↳ ${firstLine(last.text)}`;
-  if (t.outdated) msg += "  (code changed)";
-  return { range: t.range, severity: severity(t), source: "claudix", code: t.id, message: msg, data: { thread: t.id } };
+  const msg = marker(t) + (t.outdated ? " · code changed" : "");
+  const range = args.underline ? t.range : { start: t.range.start, end: t.range.start };
+  return { range, severity: severity(t), source: "claudix", code: t.id, message: msg, data: { thread: t.id } };
 }
 
 function threadMarkdown(t: Thread) {
   const lines = [`**${t.id}** · ${t.kind} · ${t.status}${t.outdated ? " · code changed since" : ""}`, ""];
-  for (const m of t.messages) lines.push(`**${m.role === "you" ? "you" : "claude"}:** ${m.text}`, "");
+  for (const m of t.messages) lines.push(`**${m.role === "you" ? "you" : m.from ? `claude (${m.from})` : "claude"}:** ${m.text}`, "");
   return lines.join("\n");
 }
 
@@ -152,7 +160,11 @@ function describeForClaude(ev: EventPayload): string {
   const t = ev.thread;
   const where = `${relPath(t.uri)}:${t.range.start.line + 1}-${t.range.end.line + 1}`;
   const head = `[claudix ${t.id}] ${ev.followup ? "follow-up on" : "new"} ${t.kind} at ${where}`;
-  const code = snippet(t.uri, t.range);
+  // Cap quoted code so a whole-file selection cannot push the comment past
+  // the Monitor notification limit; Claude can read the file itself.
+  const MAX_LINES = 40;
+  const all = snippet(t.uri, t.range).split("\n");
+  const code = all.length > MAX_LINES ? [...all.slice(0, MAX_LINES), `… (${all.length - MAX_LINES} more lines, see ${where})`].join("\n") : all.join("\n");
   const history = ev.followup
     ? t.messages.slice(0, -1).map((m) => `  ${m.role}: ${firstLine(m.text)}${m.text.includes("\n") ? " …" : ""}`).join("\n")
     : "";
@@ -164,7 +176,7 @@ function describeForClaude(ev: EventPayload): string {
     code ? "```\n" + code + "\n```" : "",
     history ? "thread so far:\n" + history : "",
     `> ${ev.text}`,
-    `${ask}  →  curl -s -XPOST localhost:${httpPort}/reply -H 'content-type: application/json' -d '{"thread":"${t.id}","text":"...","status":"answered|applied|declined"}'`,
+    `${ask}  →  bash ${import.meta.dir}/reply.sh ${httpPort} ${t.id} answered|applied|declined '...'`,
   ].filter(Boolean).join("\n");
 }
 
@@ -401,9 +413,21 @@ function status() {
   return {
     summary: `${n("open")} open · ${n("answered")} answered · ${n("applied")} applied · ${n("declined")} declined`,
     project: PROJECT, open: n("open"), answered: n("answered"), applied: n("applied"), declined: n("declined"), resolved: n("resolved"),
-    threads: all.filter((t) => t.status !== "resolved").map((t) => ({
-      id: t.id, kind: t.kind, status: t.status, file: relPath(t.uri), line: t.range.start.line + 1, head: headText(t),
-    })),
+    threads: all.filter((t) => t.status !== "resolved").sort((a, b) => a.createdAt - b.createdAt).map((t) => {
+      const last = t.messages[t.messages.length - 1];
+      let path = t.uri; try { path = fileURLToPath(t.uri); } catch {}
+      return {
+        id: t.id, kind: t.kind, status: t.status, outdated: t.outdated,
+        file: relPath(t.uri), path, line: t.range.start.line + 1, col: t.range.start.character,
+        head: headText(t), marker: marker(t),
+        lineStr: String(t.range.start.line + 1), loc: `${relPath(t.uri)}:${t.range.start.line + 1}`,
+        last: last ? `${last.role === "you" ? "you" : last.from ?? "claude"}: ${firstLine(last.text)}` : "",
+        markdown: threadMarkdown(t),
+        // plain-text version for the Steel picker preview
+        preview: [`${t.id} · ${t.kind} · ${t.status}${t.outdated ? " · code changed since" : ""}`, "",
+          ...t.messages.flatMap((m) => [`${m.role === "you" ? "you" : m.from ? `claude (${m.from})` : "claude"}: ${m.text}`, ""])],
+      };
+    }),
   };
 }
 
@@ -423,10 +447,11 @@ const server = Bun.serve({
       return t ? Response.json({ ...t, file: relPath(t.uri), code: snippet(t.uri, t.range) }) : new Response("no such thread", { status: 404 });
     }
     if (req.method === "POST" && url.pathname === "/reply") {
-      const b = (await req.json()) as { thread: string; text: string; status?: Status };
+      const b = (await req.json()) as { thread: string; text: string; status?: Status; from?: string };
       const t = threads.get(b.thread);
       if (!t) return new Response(`no such thread ${b.thread}`, { status: 404 });
-      t.messages.push({ role: "claude", text: b.text, at: Date.now() });
+      const from = typeof b.from === "string" && b.from.trim() ? b.from.trim().slice(0, 40) : undefined;
+      t.messages.push({ role: "claude", text: b.text, at: Date.now(), from });
       t.status = b.status && ["answered", "applied", "declined"].includes(b.status) ? b.status : "answered";
       publishAll(t.uri);
       process.stdout.write(JSON.stringify({ at: Date.now(), type: "reply", thread: t }) + "\n");
@@ -460,6 +485,15 @@ const state = { project: PROJECT, sock: SOCK, port: httpPort, ws: `ws://127.0.0.
 fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 process.stderr.write(`claudix: project=${PROJECT} ws=${state.ws} sock=${SOCK}\n`);
 process.stdout.write(JSON.stringify({ at: Date.now(), type: "started", ...state }) + "\n");
+
+// Exit after a while with nobody attached (no editor, no watcher), so
+// daemons started detached by up.sh do not pile up across sessions.
+const IDLE_MS = Number(args["idle-minutes"] ?? 30) * 60_000;
+let idleSince = Date.now();
+setInterval(() => {
+  if (lspClients.size > 0 || wsClients.size > 0) { idleSince = Date.now(); return; }
+  if (Date.now() - idleSince > IDLE_MS) { process.stderr.write("claudix: idle, exiting\n"); shutdown(); }
+}, 30_000);
 
 function shutdown() {
   try { fs.unlinkSync(SOCK); } catch {}

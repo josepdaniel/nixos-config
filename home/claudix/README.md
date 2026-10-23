@@ -65,8 +65,9 @@ Edits here need `nixos-rebuild switch`, then `/claudix` again in Claude Code
 | `:ccn <text>` | force a new thread even when the cursor is inside one |
 | `:cc-resolve` | resolve the thread under the cursor |
 | `:cc-status` | thread tally in the status line |
+| `:cc-threads` | picker over open threads: type to filter, enter jumps there and opens the hover |
 | `space k` on a thread | read the whole conversation |
-| `space d` / `space D` | list threads in this file / the project |
+| `space d` / `space D` | Helix diagnostics picker (jumps only; use `:cc-threads` for hover on select) |
 | `]d` / `[d` | jump between threads |
 | `space a` on a thread | code actions: resolve, ask Claude to apply |
 
@@ -76,6 +77,10 @@ Thread glyphs: `?` open question, `!` open change request, `✓` answered,
 `✓ applied`, `✗ declined`. `(code changed)` means you edited the anchored code
 after commenting; the daemon re-anchors automatically when it can find the
 original code again (for example after a reload).
+
+Threads are published as zero-width diagnostics so Helix draws no squiggle
+under the code; the gutter mark, inline marker, hover and `]d` still work.
+Start the daemon with `--underline` to get the full range underlined.
 
 ## HTTP API (what Claude uses)
 

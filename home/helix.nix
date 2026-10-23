@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   # claudix: review threads in Helix answered by the running Claude Code
   # session. Source lives in ./claudix (daemon, Steel cog, Claude skill) and
@@ -9,6 +9,8 @@ let
     cp ${claudixSrc}/helix/claudix.scm $out/
   '';
   claudixDaemon = "${claudixSrc}/daemon/claudix.ts";
+  claudixUp = "${claudixSrc}/daemon/up.sh";
+  claudixReply = "${claudixSrc}/daemon/reply.sh";
   # Languages reviewed with claudix. Each entry restates Helix's default
   # servers for that language, since language-servers replaces the default.
   claudixLanguages = {
@@ -18,14 +20,32 @@ let
     tsx = [ "typescript-language-server" ];
     javascript = [ "typescript-language-server" ];
     jsx = [ "typescript-language-server" ];
-    python = [ "ty" "ruff" "jedi" "pylsp" ];
-    go = [ "gopls" "golangci-lint-lsp" ];
+    python = [
+      "ty"
+      "ruff"
+      "jedi"
+      "pylsp"
+    ];
+    go = [
+      "gopls"
+      "golangci-lint-lsp"
+    ];
     bash = [ "bash-language-server" ];
     fish = [ "fish-lsp" ];
-    toml = [ "taplo" "tombi" ];
-    yaml = [ "yaml-language-server" "ansible-language-server" ];
+    toml = [
+      "taplo"
+      "tombi"
+    ];
+    yaml = [
+      "yaml-language-server"
+      "ansible-language-server"
+    ];
     json = [ "vscode-json-language-server" ];
-    markdown = [ "marksman" "markdown-oxide" "rumdl" ];
+    markdown = [
+      "marksman"
+      "markdown-oxide"
+      "rumdl"
+    ];
     scheme = [ "steel-language-server" ];
   };
 
@@ -122,8 +142,35 @@ in
 
   # the /claudix Claude Code skill, with the daemon's store path filled in
   home.file.".claude/skills/claudix/SKILL.md".text =
-    builtins.replaceStrings [ "@daemon@" ] [ claudixDaemon ] (builtins.readFile "${claudixSrc}/skill/SKILL.md");
+    builtins.replaceStrings [ "@daemon@" "@up@" "@reply@" ] [ claudixDaemon claudixUp claudixReply ]
+      (builtins.readFile "${claudixSrc}/skill/SKILL.md");
 
   home.sessionVariables.EDITOR = "hx";
-  home.packages = [ pkgs.nixd ];
+  # Language servers for every language in claudixLanguages, so the lists
+  # above resolve to real binaries. Helix skips any that are missing, so
+  # trimming this is safe.
+  home.packages = with pkgs; [
+    nixd
+    rust-analyzer
+    typescript-language-server
+    typescript
+    ty
+    ruff
+    python3Packages.jedi-language-server
+    python3Packages.python-lsp-server
+    gopls
+    golangci-lint-langserver
+    golangci-lint
+    bash-language-server
+    shellcheck
+    fish-lsp
+    taplo
+    tombi
+    yaml-language-server
+    ansible-language-server
+    vscode-langservers-extracted
+    marksman
+    markdown-oxide
+    rumdl
+  ];
 }
