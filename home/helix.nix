@@ -129,7 +129,11 @@ in
       };
     steel.enable = true;
     # small local commands, installed next to init.scm
-    extraRequires = [ ./helix-extra/zed-preview.scm ];
+    extraRequires = [
+      ./helix-extra/zed-preview.scm
+      ./helix-extra/git-diff.scm
+      ./helix-extra/git-peek.scm
+    ];
     plugins.forest = {
       enable = true;
       config.position = "left";
