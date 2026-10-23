@@ -41,11 +41,9 @@ let
       "ansible-language-server"
     ];
     json = [ "vscode-json-language-server" ];
-    markdown = [
-      "marksman"
-      "markdown-oxide"
-      "rumdl"
-    ];
+    # marksman only: rumdl and markdown-oxide never answer LSP shutdown, which
+    # made Helix exit 1. Its link/lint diagnostics are muted; claudix still shows.
+    markdown = [ { name = "marksman"; except-features = [ "diagnostics" ]; } ];
     scheme = [ "steel-language-server" ];
   };
 
@@ -130,6 +128,8 @@ in
         };
       };
     steel.enable = true;
+    # small local commands, installed next to init.scm
+    extraRequires = [ ./helix-extra/zed-preview.scm ];
     plugins.forest = {
       enable = true;
       config.position = "left";
@@ -170,7 +170,5 @@ in
     ansible-language-server
     vscode-langservers-extracted
     marksman
-    markdown-oxide
-    rumdl
   ];
 }

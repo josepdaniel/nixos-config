@@ -14,12 +14,22 @@ session that owns it.
 
 ## How it works
 
-```
- Claude Code session ──/claudix──▶ daemon/claudix.ts (bun, one per project)
-        ▲  Monitor (WebSocket)         │ unix socket            ▲ HTTP /reply
-        │  one event per comment       ▼                        │
-        │                       daemon/shim.ts ◀── Helix (as a language server)
-        └────────── Claude answers in the thread ───────────────┘
+```mermaid
+flowchart LR
+    Helix["Helix<br/>:cc / :cc! / :cc-threads"]
+    Shim["shim.ts<br/>LSP proxy (stdio)"]
+    Daemon["claudix.ts daemon<br/>one per project, owns the threads"]
+    Claude["Claude Code session"]
+
+    Helix -- "LSP: executeCommand, hover, codeAction" --> Shim
+    Shim -- "LSP over unix socket" --> Daemon
+    Daemon -- "publishDiagnostics, claudix/fileChanged" --> Shim
+    Shim --> Helix
+
+    Claude -- "/claudix → up.sh" --> Daemon
+    Daemon -- "WebSocket /events: one frame per comment (Monitor tool)" --> Claude
+    Claude -- "reply.sh → POST /reply" --> Daemon
+    Claude -. "edits files on disk (:cc!)" .-> Helix
 ```
 
 - **Daemon**: started by `/claudix`, owns the threads. LSP over a unix socket,

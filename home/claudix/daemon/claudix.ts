@@ -189,13 +189,17 @@ function emit(ev: EventPayload) {
 // ---------------------------------------------------------- LSP connections
 
 const openDocs = new Map<string, TextDocument>();   // latest text across clients
-const lspClients = new Set<Connection>();
+// Each editor connection and the documents it has open. Helix may run
+// several instances of this server (one per workspace root), all attached to
+// the same daemon; diagnostics for a file go only to the instances that
+// opened it, or Helix shows every thread once per instance.
+const lspClients = new Map<Connection, Set<string>>();
 
 function publishAll(uri?: string) {
   const uris = uri ? [uri] : new Set([...threads.values()].map((t) => t.uri));
   for (const u of uris) {
     const diagnostics = [...threads.values()].filter((t) => t.uri === u && t.status !== "resolved").map(diagnosticFor);
-    for (const c of lspClients) c.sendNotification("textDocument/publishDiagnostics", { uri: u, diagnostics });
+    for (const [c, open] of lspClients) if (open.has(u)) c.sendNotification("textDocument/publishDiagnostics", { uri: u, diagnostics });
   }
 }
 
@@ -260,7 +264,8 @@ function resolveThread(t: Thread) {
 
 function serveLsp(socket: net.Socket) {
   const c = new Connection(socket);
-  lspClients.add(c);
+  const open = new Set<string>();
+  lspClients.set(c, open);
   const drop = () => { lspClients.delete(c); c.dispose(); };
 
   c.onRequest("initialize", () => ({
@@ -277,12 +282,16 @@ function serveLsp(socket: net.Socket) {
   c.onNotification("exit", drop);
 
   c.onNotification("textDocument/didOpen", ({ textDocument: d }) => {
+    open.add(d.uri);
     openDocs.set(d.uri, TextDocument.create(d.uri, d.languageId, d.version, d.text));
     watchFile(d.uri);
     reanchor(d.uri);
     publishAll(d.uri);
   });
-  c.onNotification("textDocument/didClose", ({ textDocument: d }) => { openDocs.delete(d.uri); });
+  c.onNotification("textDocument/didClose", ({ textDocument: d }) => {
+    open.delete(d.uri);
+    if (![...lspClients.values()].some((o) => o.has(d.uri))) openDocs.delete(d.uri);
+  });
 
   // Apply edits to our copy of the text and track thread anchors through them.
   c.onNotification("textDocument/didChange", (params) => {
@@ -372,7 +381,7 @@ function fileChanged(changed: string) {
   changeTimers.set(changed, setTimeout(() => {
     const u = pathToFileURL(changed).href;
     if (args.debug) process.stderr.write(`claudix: file changed ${changed} -> notifying ${lspClients.size} editor(s)\n`);
-    for (const c of lspClients) c.sendNotification("claudix/fileChanged", { uri: u });
+    for (const [c, open] of lspClients) if (open.has(u)) c.sendNotification("claudix/fileChanged", { uri: u });
   }, 200));
 }
 
