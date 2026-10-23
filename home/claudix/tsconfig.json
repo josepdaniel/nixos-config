@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"], "target": "ESNext", "module": "Preserve", "moduleDetection": "force",
+    "allowImportingTsExtensions": true, "verbatimModuleSyntax": true, "noEmit": true,
+    "strict": true, "skipLibCheck": true, "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true, "noImplicitOverride": true,
+    "types": ["bun-types"], "typeRoots": ["/home/joseph/dev/claudix/node_modules/@types", "/home/joseph/dev/claudix/node_modules"]
+  },
+  "include": ["daemon/*.ts", "test/*.ts"]
+}

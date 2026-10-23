@@ -95,7 +95,17 @@ in
     openFirewall = true;
   };
 
-  services.power-profiles-daemon.enable = true;
+  # TLP and power-profiles-daemon conflict; TLP goes further on battery
+  # (CPU EPP, PCIe/USB runtime PM, Wi-Fi power save) and handles ThinkPad
+  # charge thresholds.
+  services.power-profiles-daemon.enable = false;
+  services.tlp = {
+    enable = true;
+    settings = {
+      START_CHARGE_THRESH_BAT0 = 75;
+      STOP_CHARGE_THRESH_BAT0 = 80;
+    };
+  };
 
   # ashell reads battery state only over the org.freedesktop.UPower D-Bus
   # interface; power-profiles-daemon shares that namespace but exposes no

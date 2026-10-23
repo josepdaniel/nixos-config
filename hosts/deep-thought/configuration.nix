@@ -9,6 +9,7 @@
   home-manager.backupFileExtension = "hm-bak";
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
+  home-manager.extraSpecialArgs = { inherit inputs; };
   home-manager.sharedModules = [ inputs.nhx.homeManagerModules.default ];
   home-manager.users.joseph = import ../../home/joseph.nix;
 

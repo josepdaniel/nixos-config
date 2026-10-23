@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, inputs, ... }: {
 
   imports = [
     ./helix.nix
@@ -32,5 +32,11 @@
     pkgs.gron
     pkgs.uv
     pkgs.bun
+    pkgs.dig
+    pkgs.htop
+    pkgs.whois
+    pkgs.thunderbird
+    pkgs.zed-editor
+    inputs.nix-claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }

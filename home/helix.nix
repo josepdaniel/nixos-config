@@ -1,5 +1,34 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 let
+  # claudix: review threads in Helix answered by the running Claude Code
+  # session. Source lives in ./claudix (daemon, Steel cog, Claude skill) and
+  # is installed from the store; edits need a rebuild.
+  claudixSrc = ./claudix;
+  claudixCog = pkgs.runCommandLocal "claudix-cog" { passthru.cogName = "claudix"; } ''
+    mkdir -p $out
+    cp ${claudixSrc}/helix/claudix.scm $out/
+  '';
+  claudixDaemon = "${claudixSrc}/daemon/claudix.ts";
+  # Languages reviewed with claudix. Each entry restates Helix's default
+  # servers for that language, since language-servers replaces the default.
+  claudixLanguages = {
+    nix = [ "nixd" ];
+    rust = [ "rust-analyzer" ];
+    typescript = [ "typescript-language-server" ];
+    tsx = [ "typescript-language-server" ];
+    javascript = [ "typescript-language-server" ];
+    jsx = [ "typescript-language-server" ];
+    python = [ "ty" "ruff" "jedi" "pylsp" ];
+    go = [ "gopls" "golangci-lint-lsp" ];
+    bash = [ "bash-language-server" ];
+    fish = [ "fish-lsp" ];
+    toml = [ "taplo" "tombi" ];
+    yaml = [ "yaml-language-server" "ansible-language-server" ];
+    json = [ "vscode-json-language-server" ];
+    markdown = [ "marksman" "markdown-oxide" "rumdl" ];
+    scheme = [ "steel-language-server" ];
+  };
+
   # nixpkgs' helix.runtime only ships grammars + queries, because upstream helix
   # 25.07 embeds the themes and the tutor in the binary. steelix forks an older
   # helix that still reads both from disk, but reuses helix.runtime as-is -- so
@@ -33,14 +62,18 @@ in
     package = steelix;
     settings = {
       theme = "monokai_pro";
+      # show claudix threads (and other diagnostics) inline, not only in the gutter
+      editor.end-of-line-diagnostics = "hint";
+      editor.inline-diagnostics.cursor-line = "hint";
       keys.normal = {
         R = ":reset-diff-change";
-        # f = ":forest-open";
+        f = ":forest-open";
       };
     };
     languages.language = [
       {
         name = "nix";
+        language-servers = claudixLanguages.nix ++ [ "claudix" ];
         auto-format = true;
         formatter = {
           command = lib.getExe pkgs.nixfmt;
@@ -48,14 +81,49 @@ in
           args = [ "-" ];
         };
       }
-    ];
+    ]
+    ++ lib.mapAttrsToList (name: servers: {
+      inherit name;
+      language-servers = servers ++ [ "claudix" ];
+    }) (removeAttrs claudixLanguages [ "nix" ]);
+    # Helix spawns the shim; the shim connects to the daemon that /claudix
+    # started in Claude Code for this project, or idles if there is none.
+    languages.language-server.claudix = {
+      command = lib.getExe pkgs.bun;
+      args = [ "${claudixSrc}/daemon/shim.ts" ];
+    };
+    # nixd evaluates the real system so option completion, hover docs and
+    # goto-definition work for options from flake inputs (nhx, home-manager),
+    # which nil cannot see. First eval is slow; it is cached afterwards.
+    languages.language-server.nixd =
+      let
+        flake = ''(builtins.getFlake "/etc/nixos")'';
+      in
+      {
+        command = lib.getExe pkgs.nixd;
+        config.nixd = {
+          nixpkgs.expr = "import ${flake}.inputs.nixpkgs { }";
+          options = {
+            nixos.expr = "${flake}.nixosConfigurations.deep-thought.options";
+            home-manager.expr = "${flake}.nixosConfigurations.deep-thought.options.home-manager.users.type.getSubOptions [ ]";
+          };
+        };
+      };
     steel.enable = true;
     plugins.forest = {
       enable = true;
       config.position = "left";
     };
+    plugins.claudix = {
+      enable = true;
+      package = claudixCog;
+    };
   };
 
+  # the /claudix Claude Code skill, with the daemon's store path filled in
+  home.file.".claude/skills/claudix/SKILL.md".text =
+    builtins.replaceStrings [ "@daemon@" ] [ claudixDaemon ] (builtins.readFile "${claudixSrc}/skill/SKILL.md");
+
   home.sessionVariables.EDITOR = "hx";
-  home.packages = [ pkgs.nil ];
+  home.packages = [ pkgs.nixd ];
 }
