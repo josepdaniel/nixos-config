@@ -85,6 +85,8 @@ in
   services.udev.packages = [ pkgs.swayosd ];
   users.users.${user}.extraGroups = [ "video" ];
 
+  services.hardware.bolt.enable = true; # Thunderbolt device authorization (external display)
+
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
 
@@ -203,17 +205,50 @@ in
 
     services.cliphist.enable = true;
 
-    xdg.desktopEntries.qalculate = {
-      name = "Calculator";
-      genericName = "Calculator";
-      comment = "Command-line calculator in a floating terminal";
-      exec = "alacritty --class org.nixos.Qalculate -e qalc";
-      icon = "accessories-calculator";
-      terminal = false;
-      categories = [
-        "Utility"
-        "Calculator"
-      ];
+    # Extra entries for the fuzzel launcher. Fuzzel only lists .desktop
+    # entries, so each power action is one entry. "niri msg action quit" ends
+    # the session the same way Mod+Shift+E does, skipping its confirmation.
+    xdg.desktopEntries = {
+      qalculate = {
+        name = "Calculator";
+        genericName = "Calculator";
+        comment = "Command-line calculator in a floating terminal";
+        exec = "alacritty --class org.nixos.Qalculate -e qalc";
+        icon = "accessories-calculator";
+        terminal = false;
+        categories = [
+          "Utility"
+          "Calculator"
+        ];
+      };
+      lock-screen = {
+        name = "Lock Screen";
+        exec = "swaylock";
+        icon = "system-lock-screen";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      log-out = {
+        name = "Log Out";
+        exec = "niri msg action quit --skip-confirmation";
+        icon = "system-log-out";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      shut-down = {
+        name = "Shut Down";
+        exec = "systemctl poweroff";
+        icon = "system-shutdown";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      reboot = {
+        name = "Reboot";
+        exec = "systemctl reboot";
+        icon = "system-reboot";
+        terminal = false;
+        categories = [ "System" ];
+      };
     };
 
     programs.swaylock = {
@@ -287,6 +322,12 @@ in
         border-size = 2;
         border-radius = 4;
         anchor = "top-center";
+        # Notifications that carry actions (blueman pairing prompts, etc.):
+        # keep them on screen and let a left-click open the action menu.
+        actionable = {
+          default-timeout = 0;
+          on-button-left = "exec makoctl menu -n \"$id\" -- fuzzel -d";
+        };
       };
     };
 
